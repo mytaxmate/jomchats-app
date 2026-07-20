@@ -47,6 +47,7 @@ export interface EvidenceLine {
 
 export interface DetectResult {
   language: Language;
+  query_en: string; // English rephrasing of the question, for fact matching
   intent: Intent;
   wants_human: boolean;
   sensitive_topic: string | null; // e.g. "refund", "eligibility", "maintenance_fee"

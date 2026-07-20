@@ -131,7 +131,9 @@ export async function runPipeline(
   }
 
   // ---- 3. Retrieve (facts win) ------------------------------------------
-  const { evidence, topScore } = await retrieve(message, { limit: 6 });
+  // Match on the English rephrasing so ms/zh/manglish hit the English facts.
+  const retrievalQuery = `${detect.query_en || message} ${message}`;
+  const { evidence, topScore } = await retrieve(retrievalQuery, { limit: 6 });
   if (topScore < RETRIEVAL_FLOOR || evidence.length === 0) {
     notes.push(`retrieval_floor topScore=${topScore.toFixed(2)}`);
     await recordGap(message);
@@ -256,6 +258,7 @@ export async function runPipeline(
 function normalizeDetect(d: Partial<DetectResult>): DetectResult {
   return {
     language: d.language ?? "en",
+    query_en: d.query_en ?? "",
     intent: d.intent ?? "project_question",
     wants_human: !!d.wants_human,
     sensitive_topic: d.sensitive_topic ?? null,
