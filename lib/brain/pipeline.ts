@@ -27,7 +27,9 @@ const HANDOVER_MSG = "Let me bring in my colleague on this one — one moment ya
 const CONF_SEND = 0.75;
 const CONF_QA = 0.5;
 // Retrieval floor (§6 step 5): min top fact score to attempt a draft.
-const RETRIEVAL_FLOOR = 1.2;
+// Kept gentle — the verifier + numeric check are the real hallucination gates,
+// and unknown sensitive topics are already routed to handover before retrieval.
+const RETRIEVAL_FLOOR = 0.9;
 
 interface RunOpts {
   history?: string; // prior turns as "customer: ..\naisha: .." lines
@@ -131,8 +133,9 @@ export async function runPipeline(
   }
 
   // ---- 3. Retrieve (facts win) ------------------------------------------
-  // Match on the English rephrasing so ms/zh/manglish hit the English facts.
-  const retrievalQuery = `${detect.query_en || message} ${message}`;
+  // Match on the clean English rephrasing (ms/zh/manglish → English facts).
+  // Using query_en ALONE avoids the original message's filler words diluting the score.
+  const retrievalQuery = detect.query_en?.trim() || message;
   const { evidence, topScore } = await retrieve(retrievalQuery, { limit: 6 });
   if (topScore < RETRIEVAL_FLOOR || evidence.length === 0) {
     notes.push(`retrieval_floor topScore=${topScore.toFixed(2)}`);
