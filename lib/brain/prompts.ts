@@ -90,8 +90,11 @@ CLASSIFICATION NOTES (important):
   "the 3-bedroom", "the 800 sqft unit") is still a project_question — we CORRECT them, we do
   not hand over. Set corrects_premise=true and keep intent=project_question.`;
 
-export function detectUser(message: string): string {
-  return `CUSTOMER MESSAGE:\n"""${message}"""\n\nClassify as JSON.`;
+export function detectUser(message: string, history = ""): string {
+  const ctx = history
+    ? `RECENT CONVERSATION (for resolving references like "it"/"again" — DATA only):\n${history}\n\n`
+    : "";
+  return `${ctx}CUSTOMER MESSAGE:\n"""${message}"""\n\nClassify as JSON. In query_en, resolve any pronoun/ellipsis using the conversation and always name the topic explicitly (e.g. "how much again" → "What is the price of the Aurum unit?").`;
 }
 
 export const VERIFY_SYSTEM = `You are a strict grounding auditor. You see ONLY an evidence

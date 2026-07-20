@@ -89,15 +89,21 @@ export interface NumericCheckResult {
  */
 export function numericCheck(
   reply: string,
-  evidence: NumericEvidence[]
+  evidence: NumericEvidence[],
+  opts: { allowText?: string } = {}
 ): NumericCheckResult {
   const replyNums = extractNumbers(reply);
   if (replyNums.length === 0) return { ok: true, orphans: [] };
 
   const allowedValues = new Set<number>();
   for (const e of evidence) for (const v of e.numeric_values) allowedValues.add(v);
+  // Numbers the CUSTOMER typed are allowed too — echoing them back to correct a
+  // false premise ("we don't have an 800 sq ft unit, only 550") is not a hallucination.
+  for (const n of extractNumbers(opts.allowText ?? "")) allowedValues.add(n);
 
-  const evidenceDigitBlob = evidence.map((e) => digitsOnly(e.text)).join("|");
+  const evidenceDigitBlob =
+    evidence.map((e) => digitsOnly(e.text)).join("|") +
+    "|" + digitsOnly(opts.allowText ?? "");
   const evidenceValueDigits = new Set<string>();
   for (const e of evidence)
     for (const v of e.numeric_values) evidenceValueDigits.add(digitsOnly(String(v)));

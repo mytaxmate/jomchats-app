@@ -56,7 +56,7 @@ export async function runPipeline(
     const r = await askJSON<DetectResult>({
       model: MODELS.fast(),
       system: DETECT_SYSTEM,
-      user: detectUser(message),
+      user: detectUser(message, opts.history ?? ""),
       maxTokens: 400,
     });
     detect = normalizeDetect(r.data);
@@ -215,7 +215,8 @@ export async function runPipeline(
   // ---- 6. Numeric echo check (code, not AI) ------------------------------
   const nc = numericCheck(
     replyText,
-    evidence.map((e) => ({ numeric_values: e.numeric_values, text: e.text }))
+    evidence.map((e) => ({ numeric_values: e.numeric_values, text: e.text })),
+    { allowText: message } // customer's own numbers are fair to echo when correcting
   );
   if (!nc.ok) {
     return finish("numeric_mismatch", [FALLBACK], {

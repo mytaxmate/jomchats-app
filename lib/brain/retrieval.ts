@@ -38,6 +38,9 @@ export function scoreFact(queryTokens: string[], fact: Fact): number {
     else if (keyTokens.has(t)) score += 2;
     else if (valueTokens.has(t)) score += 1;
   }
+  // Topic bonus: if a query word IS this fact's key ("facilities" → the facilities
+  // fact), prefer it over facts that merely mention the word (e.g. floor-layout).
+  if ([...q].some((t) => keyTokens.has(t))) score += 2;
   // normalize lightly by query length so long questions don't inflate
   return score / Math.sqrt(q.size);
 }
