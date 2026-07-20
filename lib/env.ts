@@ -19,8 +19,13 @@ export const env = {
   supabaseServiceRoleKey: () => required("SUPABASE_SERVICE_ROLE_KEY"),
   supabaseAnonKey: () => optional("SUPABASE_ANON_KEY"),
   tenantId: () => required("TENANT_ID"),
-  // Filled in as later phases land:
-  anthropicKey: () => optional("ANTHROPIC_API_KEY"),
+  // "TZ" is reserved on Vercel — use APP_TZ. Format dates explicitly in this zone.
+  appTz: () => optional("APP_TZ", "Asia/Kuala_Lumpur"),
+  anthropicKey: () => required("ANTHROPIC_API_KEY"),
   answerModel: () => optional("ANSWER_MODEL"),
   fastModel: () => optional("FAST_MODEL"),
+  // Simulator gate (§8.9): the private test chat requires this header.
+  simulatorSecret: () => optional("SIMULATOR_SECRET"),
+  // Filled in as later phases land:
+  voyageKey: () => optional("VOYAGE_API_KEY"),
 };
