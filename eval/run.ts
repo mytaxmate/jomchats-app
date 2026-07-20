@@ -44,7 +44,7 @@ async function runCase(c: Case): Promise<{ ok: boolean; reasons: string[] }> {
   const res = await fetch(`${BASE}/api/simulate`, {
     method: "POST",
     headers: { "content-type": "application/json", "x-simulator-secret": SECRET },
-    body: JSON.stringify({ message: c.message }),
+    body: JSON.stringify({ message: c.message, history: (c.history as string) ?? "" }),
   });
   const trace = (await res.json()) as {
     ok: boolean;
