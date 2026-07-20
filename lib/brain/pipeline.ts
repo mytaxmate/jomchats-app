@@ -6,6 +6,7 @@ import { loadSettings } from "./settings";
 import {
   personaSystem,
   draftUser,
+  draftRepairUser,
   DETECT_SYSTEM,
   detectUser,
   VERIFY_SYSTEM,
@@ -184,7 +185,7 @@ export async function runPipeline(
     });
   }
 
-  const replyText = reply.join(" ");
+  let replyText = reply.join(" ");
 
   // ---- 5. Verify (FAST, independent grounding gate) ----------------------
   let verify: VerifyResult;
@@ -201,6 +202,46 @@ export async function runPipeline(
     usage.calls++;
   } catch {
     verify = { verdict: "unsupported", unsupported_claims: ["verifier_error"] };
+  }
+  // Self-repair: if the verifier flagged claims, re-draft ONCE dropping them,
+  // instead of giving up. Catches drafter embellishment while staying grounded.
+  if (verify.verdict !== "grounded") {
+    notes.push(`verify_repair:${(verify.unsupported_claims ?? []).join("; ").slice(0, 200)}`);
+    try {
+      const r = await askJSON<DraftResult>({
+        model: MODELS.answer(),
+        system: personaSystem(settings.persona),
+        user: draftRepairUser({
+          evidence: evidenceBlock,
+          message,
+          previous: replyText,
+          unsupported: verify.unsupported_claims ?? [],
+        }),
+        maxTokens: 700,
+      });
+      usage.input += r.usage.input;
+      usage.output += r.usage.output;
+      usage.calls++;
+      const rerReply = (r.data.reply_messages ?? []).filter(Boolean);
+      if (rerReply.length) {
+        draft = r.data;
+        reply.length = 0;
+        reply.push(...rerReply);
+        replyText = rerReply.join(" ");
+        const rv = await askJSON<VerifyResult>({
+          model: MODELS.fast(),
+          system: VERIFY_SYSTEM,
+          user: verifyUser({ evidence: evidenceBlock, reply: replyText }),
+          maxTokens: 500,
+        });
+        verify = rv.data;
+        usage.input += rv.usage.input;
+        usage.output += rv.usage.output;
+        usage.calls++;
+      }
+    } catch {
+      /* keep the failed verdict → fallback below */
+    }
   }
   if (verify.verdict !== "grounded") {
     return finish("verify_failed", [FALLBACK], {
