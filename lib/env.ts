@@ -26,6 +26,11 @@ export const env = {
   fastModel: () => optional("FAST_MODEL"),
   // Simulator gate (§8.9): the private test chat requires this header.
   simulatorSecret: () => optional("SIMULATOR_SECRET"),
+  // Meta / WhatsApp Cloud API (§14). Optional so builds pass before setup.
+  metaAppSecret: () => optional("META_APP_SECRET"),
+  metaVerifyToken: () => optional("META_VERIFY_TOKEN"),
+  metaWaToken: () => optional("META_WA_TOKEN"),
+  metaPhoneNumberId: () => optional("META_PHONE_NUMBER_ID"),
   // Filled in as later phases land:
   voyageKey: () => optional("VOYAGE_API_KEY"),
 };
